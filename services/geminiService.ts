@@ -11,7 +11,7 @@ export const fetchPoseReferences = async (
   count: number,
   settings: AppSettings
 ): Promise<PoseImage[]> => {
-  const ai = new GoogleGenAI({ apiKey: import.meta.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: import.meta.env.REACT_APP_AI_API_KEY });
   const randomSeed = Math.random().toString(36).substring(7);
 
   // Usamos el prompt para "orientar" la IA, aunque para las imágenes
