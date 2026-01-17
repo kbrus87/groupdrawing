@@ -1,0 +1,7 @@
+{
+  "name": "PoseFlow: Art Reference & Drawing Feedback",
+  "description": "A professional-grade gesture drawing application with AI-powered feedback. Fetch real-world poses, set a timer, and use your camera to get a similarity score for your drawings.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
