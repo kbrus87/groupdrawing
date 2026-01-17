@@ -43,6 +43,7 @@ export interface AppSettings {
   searchRefinement: string;
   enableRoast: boolean;
   evaluationFocus: 'Gesture' | 'Proportion' | 'Anatomy';
+  apiKey:string;
 }
 
 export interface SessionConfig {

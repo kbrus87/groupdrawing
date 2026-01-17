@@ -5,6 +5,9 @@ import { fetchPoseReferences } from './services/geminiService';
 import Timer from './components/Timer';
 import PoseViewer from './components/PoseViewer';
 import CameraModule from './components/CameraModule';
+import ByokModal from './components/ByokModal';
+import EvalCard from './components/EvalCard';
+import ThumbnailGallery from './components/ThumbnailGallery';
 
 const PROFILE_DATA: Record<ParticipantType, { label: string, emoji: string, color: string }> = {
   AdultMale: { label: 'Adulto', emoji: '👨', color: 'orange' },
@@ -43,19 +46,12 @@ const App: React.FC = () => {
     checkKey();
   }, []);
 
-  const handleOpenKeySelector = async () => {
-    // @ts-ignore
-    if (window.aistudio) {
-      // @ts-ignore
-      await window.aistudio.openSelectKey();
-      setHasUserKey(true);
-    }
-  };
 
   // Custom Images State
   const [useCustomImages, setUseCustomImages] = useState(false);
   const [customImages, setCustomImages] = useState<PoseImage[]>([]);
   const [imageUrlInput, setImageUrlInput] = useState("");
+  const [showScore, setShowScore] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Participants State
@@ -66,8 +62,38 @@ const App: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings>({
     searchRefinement: 'Professional photography',
     enableRoast: true,
-    evaluationFocus: 'Gesture'
+    evaluationFocus: 'Gesture',
+    apiKey: import.meta.env.REACT_APP_AI_API_KEY || ''
   });
+
+  const setApiKey = (apiKey) => {
+    setSettings(s => {
+      return { ...s, apiKey }
+    })
+  }
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [inputValue, setInputValue] = useState('');
+
+  const handleOpenKeySelector = async () => {
+    // @ts-ignore
+    if (window.aistudio) {
+      // @ts-ignore
+      await window.aistudio.openSelectKey();
+      setHasUserKey(true);
+    } else {
+      // Si no estamos en AI Studio, abrimos nuestro propio modal
+      setIsModalOpen(true);
+    }
+  };
+
+  const handleSaveKey = () => {
+    if (inputValue.trim()) {
+      setApiKey(inputValue); // Usamos tu función para guardar en settings
+      setIsModalOpen(false);  // Cerramos el modal
+      setHasUserKey(true);    // Marcamos que ya tenemos una clave
+    }
+  };
   const [showSettings, setShowSettings] = useState(false);
 
   // Evaluation State
@@ -90,7 +116,7 @@ const App: React.FC = () => {
       gain.connect(ctx.destination);
       osc.start();
       osc.stop(ctx.currentTime + 0.5);
-    } catch(e) {}
+    } catch (e) { }
   };
 
   const addParticipant = () => {
@@ -126,6 +152,10 @@ const App: React.FC = () => {
     setImageUrlInput("");
   };
 
+  const removeCustomImage = (idToRemove: string) => {
+    setCustomImages(customImages.filter(img => img.id !== idToRemove));
+  };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
@@ -158,10 +188,10 @@ const App: React.FC = () => {
   const startSession = async () => {
     if (!canStartPractice) return;
     setSessionState(SessionState.LOADING);
-    const sessionImages = useCustomImages && customImages.length > 0 
-      ? [...customImages] 
+    const sessionImages = useCustomImages && customImages.length > 0
+      ? [...customImages]
       : await fetchPoseReferences(config.category, config.totalImages, settings);
-    
+
     setImages(sessionImages);
     setCurrentIndex(0);
     setSecondsRemaining(config.intervalSeconds);
@@ -215,7 +245,11 @@ const App: React.FC = () => {
     if (!participant) return;
     const newEval = { id: `ev-${Date.now()}`, poseId: images[currentIndex].id, participantId, score, feedback, drawingThumbnail };
     setAllEvaluations(prev => [...prev, newEval]);
-    setLatestResult({ score, feedback, type: participant.type });
+    setLatestResult({ score, feedback, type: participant.type, participant, ev: newEval });
+    setShowScore(true)
+    setTimeout(() => {
+      setShowScore(false)
+    }, 5000)
     setShowCamera(false);
   };
 
@@ -239,13 +273,13 @@ const App: React.FC = () => {
 
         <main className={`relative flex flex-col no-scrollbar ${isVisible ? 'h-full flex-1' : 'flex-1 overflow-y-auto'}`}>
           {sessionState === SessionState.IDLE && (
-             <div className="max-w-6xl mx-auto my-4 md:my-12 p-6 md:p-10 bg-zinc-900/50 rounded-3xl border border-white/10 shadow-2xl backdrop-blur-sm grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10">
+            <div className="max-w-6xl mx-auto my-4 md:my-12 p-6 md:p-10 bg-zinc-900/50 rounded-3xl border border-white/10 shadow-2xl backdrop-blur-sm grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10">
               <div className="space-y-8">
                 <h2 className="text-3xl font-black mb-4">Configuración</h2>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[10px] font-bold text-white/40 uppercase mb-3">Tiempo (s)</label>
-                    <select value={config.intervalSeconds} onChange={e => setConfig({...config, intervalSeconds: parseInt(e.target.value)})} className="w-full bg-zinc-800 text-white border border-white/10 rounded-xl py-3 px-4 text-sm appearance-none outline-none focus:border-blue-500">
+                    <select value={config.intervalSeconds} onChange={e => setConfig({ ...config, intervalSeconds: parseInt(e.target.value) })} className="w-full bg-zinc-800 text-white border border-white/10 rounded-xl py-3 px-4 text-sm appearance-none outline-none focus:border-blue-500">
                       <option value={30}>30s (Gesto)</option>
                       <option value={60}>1m (Estándar)</option>
                       <option value={300}>5m (Estudio)</option>
@@ -254,7 +288,7 @@ const App: React.FC = () => {
                   {!useCustomImages && (
                     <div>
                       <label className="block text-[10px] font-bold text-white/40 uppercase mb-3">Fotos</label>
-                      <input type="number" value={config.totalImages} min={1} max={30} onChange={e => setConfig({...config, totalImages: parseInt(e.target.value)})} className="w-full bg-white/5 border border-white/5 rounded-xl py-3 px-4 text-sm outline-none focus:border-blue-500" />
+                      <input type="number" value={config.totalImages} min={1} max={30} onChange={e => setConfig({ ...config, totalImages: parseInt(e.target.value) })} className="w-full bg-white/5 border border-white/5 rounded-xl py-3 px-4 text-sm outline-none focus:border-blue-500" />
                     </div>
                   )}
                 </div>
@@ -286,15 +320,11 @@ const App: React.FC = () => {
                       <input type="file" ref={fileInputRef} className="hidden" accept="image/*" multiple onChange={handleFileUpload} />
                       <p className="text-xs font-bold text-white/40 uppercase">Subir Archivos</p>
                     </div>
-                    <div className="grid grid-cols-2 gap-3 max-h-[250px] overflow-y-auto pr-2 no-scrollbar">
-                      {customImages.map(img => (
-                        <div key={img.id} className="relative aspect-square rounded-xl overflow-hidden bg-white/5"><img src={img.url} className="w-full h-full object-cover" /></div>
-                      ))}
-                    </div>
+                    <ThumbnailGallery customImages={customImages} removeCustomImage={removeCustomImage} />
                   </>
                 ) : (
                   <div className="p-6 bg-blue-600/10 border border-blue-500/20 rounded-3xl space-y-4">
-                    <p className="text-sm text-blue-200/70">Buscamos fotos de personas reales en poses interesantes para tu sesión.</p>
+                    <p className="text-sm text-blue-200/70">Buscamos fotos de personas reales en poses interesantes para tu sesión. Pero tambián puedes agregar tus propias imágenes.</p>
                   </div>
                 )}
               </div>
@@ -333,23 +363,26 @@ const App: React.FC = () => {
 
           {isVisible && images[currentIndex] && (
             <div className="relative h-full flex-1">
-              <PoseViewer 
-                image={images[currentIndex]} 
-                currentIndex={currentIndex} 
-                total={images.length} 
-                onNext={nextPose} 
+              <PoseViewer
+                image={images[currentIndex]}
+                currentIndex={currentIndex}
+                total={images.length}
+                onNext={nextPose}
                 onPrev={prevPose}
                 isFullscreen={isFullscreen}
                 onToggleFullscreen={() => setIsFullscreen(!isFullscreen)}
               />
-              {latestResult && (
+              {latestResult && showScore && (
                 <div className={`absolute top-10 left-1/2 -translate-x-1/2 z-[150] px-8 py-4 rounded-3xl shadow-2xl animate-in fade-in zoom-in border backdrop-blur-xl ${['Boy', 'Girl', 'LittlePerson'].includes(latestResult.type) ? 'bg-emerald-600/90 border-emerald-400' : 'bg-orange-600/90 border-orange-400'}`}>
-                  <div className="flex items-center gap-4">
-                    <span className="text-3xl">{PROFILE_DATA[latestResult.type].emoji}</span>
-                    <div>
-                      <p className="text-[10px] font-black uppercase opacity-60">PUNTUACIÓN</p>
-                      <p className="font-black text-xl leading-none">{latestResult.score}%</p>
+                  <div className="flex flex-col items-start gap-4">
+                    <div className="flex items-center gap-4">
+                      <span className="text-3xl">{PROFILE_DATA[latestResult.type].emoji}</span>
+                      <div>
+                        <p className="text-[10px] font-black uppercase opacity-60">PUNTUACIÓN</p>
+                        <p className="font-black text-xl leading-none">{latestResult.score}%</p>
+                      </div>
                     </div>
+                    {latestResult.type && latestResult.participant && <EvalCard ev={latestResult.ev} profile={PROFILE_DATA[latestResult.type]} participant={latestResult.participant} />}
                   </div>
                 </div>
               )}
@@ -357,7 +390,7 @@ const App: React.FC = () => {
           )}
 
           {sessionState === SessionState.FINISHED && (
-             <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-6">
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-6">
               <h2 className="text-6xl font-black italic tracking-tighter">¡LISTO!</h2>
               <button onClick={resetSession} className="px-12 py-5 bg-white text-black font-black rounded-2xl">VOLVER</button>
             </div>
@@ -394,14 +427,7 @@ const App: React.FC = () => {
               if (!p) return null;
               const profile = PROFILE_DATA[p.type];
               return (
-                <div key={ev.id} className="bg-black/40 rounded-2xl overflow-hidden border border-white/5 p-3">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className={`text-[9px] font-black px-2 py-0.5 rounded uppercase bg-${profile.color}-500/10 text-${profile.color}-400`}>{p.name} {profile.emoji}</span>
-                    <span className="text-[10px] font-black">{ev.score}%</span>
-                  </div>
-                  <img src={ev.drawingThumbnail} className="w-full aspect-[4/3] object-cover rounded-lg mb-2 opacity-80" />
-                  <p className="text-[10px] text-white/60 leading-tight italic">"{ev.feedback}"</p>
-                </div>
+                <EvalCard ev={ev} profile={profile} participant={p} />
               );
             })}
           </div>
@@ -427,8 +453,11 @@ const App: React.FC = () => {
       )}
 
       {showCamera && images[currentIndex] && (
-        <CameraModule referenceUrl={images[currentIndex].url} settings={settings} participants={participants} onClose={() => setShowCamera(false)} onResult={handleEvaluationResult} />
+        <CameraModule referenceUrl={images[currentIndex].url} settings={settings} participants={participants} onClose={() => {
+          setShowCamera(false)
+        }} onResult={handleEvaluationResult} />
       )}
+      {isModalOpen && <ByokModal setInputValue={setInputValue} setIsModalOpen={setIsModalOpen} handleSaveKey={handleSaveKey} inputValue={inputValue} />}
     </div>
   );
 };

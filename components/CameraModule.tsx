@@ -31,8 +31,8 @@ const CameraModule: React.FC<CameraModuleProps> = ({ referenceUrl, settings, par
   useEffect(() => {
     const startCamera = async () => {
       try {
-        const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: 'environment' } 
+        const mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' }
         });
         setStream(mediaStream);
         if (videoRef.current) {
@@ -50,7 +50,7 @@ const CameraModule: React.FC<CameraModuleProps> = ({ referenceUrl, settings, par
 
   const handleCapture = async () => {
     if (!videoRef.current || !canvasRef.current || !selectedParticipantId) return;
-    
+
     setLoading(true);
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -60,10 +60,10 @@ const CameraModule: React.FC<CameraModuleProps> = ({ referenceUrl, settings, par
     if (ctx) {
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-      
+
       const participant = participants.find(p => p.id === selectedParticipantId);
       if (participant) {
-        const result = await evaluateDrawing(referenceUrl, dataUrl, settings, participant.type,participant.name);
+        const result = await evaluateDrawing(referenceUrl, dataUrl, settings, participant.type, participant.name, settings.apiKey);
         onResult(result.score, result.feedback, dataUrl, selectedParticipantId);
       }
       setLoading(false);
@@ -80,11 +80,10 @@ const CameraModule: React.FC<CameraModuleProps> = ({ referenceUrl, settings, par
             <button
               key={p.id}
               onClick={() => setSelectedParticipantId(p.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all shrink-0 ${
-                selectedParticipantId === p.id 
-                  ? 'bg-blue-600 border-blue-400 text-white' 
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all shrink-0 ${selectedParticipantId === p.id
+                  ? 'bg-blue-600 border-blue-400 text-white'
                   : 'bg-white/5 border-white/10 text-white/40'
-              }`}
+                }`}
             >
               <span className="text-lg">{PROFILE_EMOJIS[p.type]}</span>
               <span className="text-xs font-bold">{p.name}</span>
@@ -99,7 +98,7 @@ const CameraModule: React.FC<CameraModuleProps> = ({ referenceUrl, settings, par
         ) : (
           <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover scale-x-[-1]" />
         )}
-        
+
         {loading && (
           <div className="absolute inset-0 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center space-y-4">
             <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
@@ -112,7 +111,7 @@ const CameraModule: React.FC<CameraModuleProps> = ({ referenceUrl, settings, par
 
       <div className="mt-8 flex gap-4 w-full max-w-xl">
         <button onClick={onClose} className="flex-1 py-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-all text-sm font-bold uppercase tracking-widest">Cancelar</button>
-        <button 
+        <button
           onClick={handleCapture}
           disabled={loading || !!error || !selectedParticipantId}
           className="flex-[2] py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 transition-all text-sm font-black uppercase tracking-widest shadow-xl shadow-blue-600/20"
