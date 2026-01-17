@@ -77,7 +77,7 @@ export const evaluateDrawing = async (
 
   const isEncouraging = ['Boy', 'Girl', 'LittlePerson'].includes(participantType);
   let specificInstruction = isEncouraging 
-    ? "El dibujante es un niño. Sé amable, positivo y constructivo. Puntuación mínima 60." 
+    ? "El dibujante es un niño. Sé amable, positivo y constructivo. Puntuación mínima 50." 
     : "El dibujante es un adulto. Puedes ser sarcástico (roast) pero termina con un consejo técnico útil.";
 
   const prompt = `Compara la referencia (imagen 1) con el dibujo (imagen 2). 
@@ -110,7 +110,7 @@ export const evaluateDrawing = async (
 
     return JSON.parse(response.text?.trim() || "{}");
   } catch (error) {
-    return { score: 70, feedback: "¡Buen intento! Sigue practicando las proporciones." };
+    return { score: 70, feedback: "Ocurrio un error, pero te aprobamos igual!." };
   }
 };
 
