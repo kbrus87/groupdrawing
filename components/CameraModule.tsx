@@ -63,7 +63,7 @@ const CameraModule: React.FC<CameraModuleProps> = ({ referenceUrl, settings, par
       
       const participant = participants.find(p => p.id === selectedParticipantId);
       if (participant) {
-        const result = await evaluateDrawing(referenceUrl, dataUrl, settings, participant.type);
+        const result = await evaluateDrawing(referenceUrl, dataUrl, settings, participant.type,participant.name);
         onResult(result.score, result.feedback, dataUrl, selectedParticipantId);
       }
       setLoading(false);

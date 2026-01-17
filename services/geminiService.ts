@@ -59,7 +59,8 @@ export const evaluateDrawing = async (
   referenceUrl: string, 
   drawingBase64: string,
   settings: AppSettings,
-  participantType: ParticipantType
+  participantType: ParticipantType,
+  participantName?: string
 ): Promise<{ score: number, feedback: string }> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   let referenceBase64 = "";
@@ -81,7 +82,8 @@ export const evaluateDrawing = async (
     : "El dibujante es un adulto. Puedes ser sarcástico (roast) pero termina con un consejo técnico útil.";
 
   const prompt = `Compara la referencia (imagen 1) con el dibujo (imagen 2). 
-  Enfoque: ${settings.evaluationFocus}. 
+  Enfoque: ${settings.evaluationFocus}.
+  El artista se llama ${participantName}. 
   ${specificInstruction}
   Responde en JSON con score (0-100) y feedback (máx 25 palabras).`;
 
