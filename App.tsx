@@ -8,6 +8,7 @@ import CameraModule from './components/CameraModule';
 import ByokModal from './components/ByokModal';
 import EvalCard from './components/EvalCard';
 import ThumbnailGallery from './components/ThumbnailGallery';
+import SessionSummary from './components/SessionSummary';
 
 const PROFILE_DATA: Record<ParticipantType, { label: string, emoji: string, color: string }> = {
   AdultMale: { label: 'Adulto', emoji: '👨', color: 'orange' },
@@ -258,7 +259,7 @@ const App: React.FC = () => {
   return (
     <div className="flex h-screen w-screen bg-[#0a0a0a] text-white overflow-hidden">
       <div className="flex-1 flex flex-col relative h-full">
-        {!isFullscreen && (
+        {!isFullscreen && sessionState !== SessionState.FINISHED && (
           <header className={`px-6 py-4 flex justify-between items-center bg-black/50 border-b border-white/5 z-20 backdrop-blur-md ${isVisible ? 'hidden md:flex' : 'flex'}`}>
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold italic text-white shadow-lg shadow-blue-500/20">P</div>
@@ -271,7 +272,7 @@ const App: React.FC = () => {
           </header>
         )}
 
-        <main className={`relative flex flex-col no-scrollbar ${isVisible ? 'h-full flex-1' : 'flex-1 overflow-y-auto'}`}>
+        <main className={`relative flex flex-col no-scrollbar ${isVisible || sessionState === SessionState.FINISHED ? 'h-full flex-1' : 'flex-1 overflow-y-auto'}`}>
           {sessionState === SessionState.IDLE && (
             <div className="max-w-6xl mx-auto my-4 md:my-12 p-6 md:p-10 bg-zinc-900/50 rounded-3xl border border-white/10 shadow-2xl backdrop-blur-sm grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10">
               <div className="space-y-8">
@@ -390,10 +391,12 @@ const App: React.FC = () => {
           )}
 
           {sessionState === SessionState.FINISHED && (
-            <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-6">
-              <h2 className="text-6xl font-black italic tracking-tighter">¡LISTO!</h2>
-              <button onClick={resetSession} className="px-12 py-5 bg-white text-black font-black rounded-2xl">VOLVER</button>
-            </div>
+            <SessionSummary
+              images={images}
+              evaluations={allEvaluations}
+              participants={participants}
+              onReset={resetSession}
+            />
           )}
         </main>
 
